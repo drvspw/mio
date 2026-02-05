@@ -18,8 +18,11 @@ cfg_os_poll! {
     use std::os::unix::io::{RawFd, FromRawFd};
     use std::{io, mem};
 
+    #[cfg(not(target_env = "fortanixvme"))]
     pub(crate) mod datagram;
+    #[cfg(not(target_env = "fortanixvme"))]
     pub(crate) mod listener;
+    #[cfg(not(target_env = "fortanixvme"))]
     pub(crate) mod stream;
 
     pub(in crate::sys) fn socket_addr(bytes: &[u8]) -> io::Result<(libc::sockaddr_un, libc::socklen_t)> {

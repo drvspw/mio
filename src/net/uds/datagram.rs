@@ -1,11 +1,11 @@
-use crate::io_source::IoSource;
-use crate::{event, sys, Interest, Registry, Token};
-
 use std::net::Shutdown;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::os::unix::net;
 use std::path::Path;
 use std::{fmt, io};
+
+use crate::io_source::IoSource;
+use crate::{event, sys, Interest, Registry, Token};
 
 /// A Unix datagram socket.
 pub struct UnixDatagram {
@@ -45,12 +45,7 @@ impl UnixDatagram {
 
     /// Create an unnamed pair of connected sockets.
     pub fn pair() -> io::Result<(UnixDatagram, UnixDatagram)> {
-        sys::uds::datagram::pair().map(|(socket1, socket2)| {
-            (
-                UnixDatagram::from_std(socket1),
-                UnixDatagram::from_std(socket2),
-            )
-        })
+        sys::uds::datagram::pair().map(|(socket1, socket2)| (UnixDatagram::from_std(socket1), UnixDatagram::from_std(socket2)))
     }
 
     /// Returns the address of this socket.
@@ -70,8 +65,7 @@ impl UnixDatagram {
     /// On success, returns the number of bytes read and the address from
     /// whence the data came.
     pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, sys::SocketAddr)> {
-        self.inner
-            .do_io(|inner| sys::uds::datagram::recv_from(inner, buf))
+        self.inner.do_io(|inner| sys::uds::datagram::recv_from(inner, buf))
     }
 
     /// Receives data from the socket.
@@ -182,21 +176,11 @@ impl UnixDatagram {
 }
 
 impl event::Source for UnixDatagram {
-    fn register(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
+    fn register(&mut self, registry: &Registry, token: Token, interests: Interest) -> io::Result<()> {
         self.inner.register(registry, token, interests)
     }
 
-    fn reregister(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
+    fn reregister(&mut self, registry: &Registry, token: Token, interests: Interest) -> io::Result<()> {
         self.inner.reregister(registry, token, interests)
     }
 
