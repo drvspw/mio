@@ -14,7 +14,7 @@
 //! * `tcp` and `udp` modules: see the [`crate::net`] module.
 //! * `Waker`: see [`crate::Waker`].
 
-#[cfg(not(target_env = "sgx"))]
+#[cfg(not(any(target_env = "sgx", target_env = "fortanixvme")))]
 cfg_os_poll! {
     macro_rules! debug_detail {
         (
@@ -75,6 +75,12 @@ cfg_os_poll! {
 cfg_os_poll! {
     mod sgx;
     pub(crate) use self::sgx::*;
+}
+
+#[cfg(target_env = "fortanixvme")]
+cfg_os_poll! {
+    mod vme;
+    pub (crate) use self::vme::*;
 }
 
 cfg_not_os_poll! {

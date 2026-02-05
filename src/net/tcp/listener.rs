@@ -1,5 +1,3 @@
-#[cfg(target_env = "sgx")]
-use crate::sys::tcp::net::{self, SocketAddr};
 #[cfg(not(target_env = "sgx"))]
 use std::net::{self, SocketAddr};
 #[cfg(unix)]
@@ -12,6 +10,8 @@ use std::{fmt, io};
 
 use crate::io_source::IoSource;
 use crate::net::TcpStream;
+#[cfg(target_env = "sgx")]
+use crate::sys::tcp::net::{self, SocketAddr};
 #[cfg(unix)]
 use crate::sys::tcp::set_reuseaddr;
 #[cfg(not(any(target_os = "wasi", target_env = "sgx")))]
@@ -60,7 +60,8 @@ impl TcpListener {
     /// 4. Calls `listen` on the socket to prepare it to receive new connections.
     #[cfg(not(target_os = "wasi"))]
     pub fn bind(addr: SocketAddr) -> io::Result<TcpListener> {
-        #[cfg(not(target_env = "sgx"))] {
+        #[cfg(not(target_env = "sgx"))]
+        {
             let socket = new_for_addr(addr)?;
             #[cfg(unix)]
             let listener = unsafe { TcpListener::from_raw_fd(socket) };
@@ -82,7 +83,8 @@ impl TcpListener {
             Ok(listener)
         }
 
-        #[cfg(target_env = "sgx")] {
+        #[cfg(target_env = "sgx")]
+        {
             Ok(TcpListener {
                 inner: IoSource::new(sys::tcp::bind(addr)?),
             })
@@ -91,7 +93,7 @@ impl TcpListener {
 
     /// Convenience method to bind a new TCP listener to the specified address
     /// to receive new connections.
-    #[cfg(target_env = "sgx")]
+    #[cfg(any(target_env = "sgx", target_env = "fortanixvme"))]
     pub fn bind_str(addr: &str) -> io::Result<TcpListener> {
         Ok(TcpListener {
             inner: IoSource::new(sys::tcp::bind_str(addr)?),
@@ -163,21 +165,11 @@ impl TcpListener {
 }
 
 impl event::Source for TcpListener {
-    fn register(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
+    fn register(&mut self, registry: &Registry, token: Token, interests: Interest) -> io::Result<()> {
         self.inner.register(registry, token, interests)
     }
 
-    fn reregister(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
+    fn reregister(&mut self, registry: &Registry, token: Token, interests: Interest) -> io::Result<()> {
         self.inner.reregister(registry, token, interests)
     }
 
